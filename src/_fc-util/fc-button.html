@@ -1,0 +1,75 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+
+<dom-module id="fc-button">
+
+    <template>
+        <style>
+            :host {
+                display: inline-block;
+                border-radius: var(--btn-border-radius, 4px);
+                font-weight: var(--btn-font-weight, bold);
+                /*  */
+                color: var(--btn-color, var(--secundario));
+                background-color: var(--btn-background-color, var(--primario));
+                padding: var(--btn-padding, 11px);
+                padding-right: var(--btn-padding-right, 11px);
+                padding-left: var(--btn-padding-left, 11px);
+                padding-top: var(--btn-padding-top, 11px);
+                padding-bottom: var(--btn-padding-bottom, 11px);
+                /*  */
+                border: var(--btn-border, 0) solid var(--btn-border-color, var(--primario));
+                margin: var(--btn-margin, 0);
+            }
+
+            :host(:hover) {
+                cursor: pointer;
+            }
+
+            :host(.main-fill) {
+                color: var(--secundario);
+                background-color: var(--primario);
+                padding: var(--btn-main-fill-padding, 11px);
+                padding-right: var(--btn-main-fill-padding-x, 11px);
+                padding-left: var(--btn-main-fill-padding-x, 11px);
+                padding-top: var(--btn-main-fill-padding-y, 11px);
+                padding-bottom: var(--btn-main-fill-padding-y, 11px);
+            }
+
+            :host(.sec-fill) {
+                color: var(--primario);
+                background-color: var(--secundario);
+                padding: 11px;
+            }
+
+            :host(.main-empty) {
+                color: var(--primario);
+                background-color: inherit;
+                padding: 9px;
+                border: 2px solid var(--primario);
+            }
+
+            :host(.sec-empty) {
+                color: var(--secundario);
+                background-color: inherit;
+                padding: 9px;
+                border: 2px solid var(--secundario);
+            }
+        </style>
+
+        <slot></slot>
+
+    </template>
+
+    <script>
+
+        class FcButton extends Polymer.Element {
+
+            static get is() { return 'fc-button'; }
+
+        }
+
+        window.customElements.define(FcButton.is, FcButton);
+
+    </script>
+
+</dom-module>

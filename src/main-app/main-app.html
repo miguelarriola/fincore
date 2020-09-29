@@ -1,0 +1,81 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+
+<link rel="import" href="../sign-up/sign-up.html">
+<link rel="import" href="../sign-in/sign-in.html">
+<link rel="import" href="../app-home/app-home.html">
+
+<link rel="import" href="../_fc-util/fc-notification.html">
+
+<!--  -->
+<link rel="import" href="../app-header/app-header.html">
+<link rel="import" href="../menu-bar/menu-bar.html">
+<link rel="import" href="../my-accounts/my-accounts.html">
+<link rel="import" href="../my-movements/my-movements.html">
+<link rel="import" href="../new-movement/new-movement.html">
+<link rel="import" href="../branches-atms/branches-atms.html">
+<!--  -->
+
+<dom-module id="main-app">
+
+    <template>
+        <style>
+            :host {
+                display: block;
+            }
+
+            div {
+                max-width: 600px;
+                margin: 0 auto 0 auto;
+            }
+        </style>
+
+        <div id="container">
+        </div>
+
+    </template>
+
+    <script>
+
+        class MainApp extends Polymer.Element {
+
+            static get is() { return 'main-app'; }
+
+            ready() {
+                super.ready();
+                var apiServer = 'http://3.22.208.247:3000';
+                sessionStorage.setItem("APIServer", JSON.stringify(apiServer));
+                this.switch(new CustomEvent('switch', { detail: { append: 'sign-in' } }));
+            }
+
+            switch(event) {
+                var remove = event.detail.remove;
+                var append = event.detail.append;
+                var notification = event.detail.notification;
+                if (remove) {
+                    var toRemove = this.$.container.querySelector(remove);
+                    this.$.container.removeChild(toRemove);
+                }
+                if (append) {
+                    var toAppend = document.createElement(append);
+                    toAppend.addEventListener('switch', event => this.switch(event));
+                    this.$.container.appendChild(toAppend);
+                }
+                if (notification) {
+                    this.notify(notification);
+                }
+            }
+
+            notify(notification) {
+                var toAppend = document.createElement('fc-notification');
+                toAppend.addEventListener('switch', event => this.switch(event));
+                toAppend.setNotification(notification);
+                this.$.container.prepend(toAppend);
+            }
+
+        }
+
+        window.customElements.define(MainApp.is, MainApp);
+
+    </script>
+
+</dom-module>

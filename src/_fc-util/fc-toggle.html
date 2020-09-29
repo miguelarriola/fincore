@@ -1,0 +1,87 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
+
+<dom-module id="fc-toggle">
+
+    <template>
+
+        <style>
+            :host {
+                display: inline-block;
+                --iron-icon-fill-color: var(--tgl-icon-fondo, var(--secundario));
+                --iron-icon-stroke-color: var(--tgl-icon-borde, none);
+                --iron-icon-height: var(--tgl-icon-alto, 38px);
+                --iron-icon-width: var(--tgl-icon-ancho, 38px);
+            }
+
+            :host([activo]) {
+                --iron-icon-fill-color: var(--tgl-activo-icon-fondo, var(--primario));
+                --iron-icon-stroke-color: var(--tgl-activo-icon-borde, none);
+                --iron-icon-height: var(--tgl-activo-icon-alto, 38px);
+                --iron-icon-width: var(--tgl-activo-icon-ancho, 38px);
+            }
+
+
+            div {
+                background-color: var(--tgl-fondo, var(--primario));
+                border-radius: var(--tgl-esquinas, 50%);
+                padding: var(--tgl-relleno, 10px);
+                border: solid var(--tgl-border-width, 2px) var(--tgl-border-color, var(--primario));
+                margin: 4px;
+            }
+
+            :host([activo]) div {
+                padding: var(--tgl-activo-relleno, 10px);
+                background-color: var(--tgl-activo-fondo, var(--secundario));
+                border-radius: var(--tgl-activo-esquinas, 50%);
+            }
+
+            :host(:hover) div {
+                cursor: pointer;
+            }
+        </style>
+
+        <div on-click="toggle">
+            <iron-icon icon="[[tglIcon]]"></iron-icon>
+        </div>
+
+    </template>
+
+    <script>
+
+        class FcToggle extends Polymer.Element {
+
+            static get is() {
+                return 'fc-toggle';
+            }
+
+            static get properties() {
+                return {
+                    activo: {
+                        type: Boolean,
+                        notify: true,
+                        reflectToAttribute: true,
+                        value: false
+                    },
+                    tglIcon: {
+                        type: String
+                    },
+                }
+            }
+
+            constructor() {
+                super();
+
+            }
+
+            toggle() {
+                this.activo = !this.activo
+            }
+
+        }
+
+        customElements.define(FcToggle.is, FcToggle);
+
+    </script>
+
+</dom-module>

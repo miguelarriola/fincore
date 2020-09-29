@@ -1,0 +1,160 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/lib/elements/dom-repeat.html">
+<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+
+<link rel="import" href="../_fc-util/fc-panel.html">
+<link rel="import" href="../_fc-util/fc-button.html">
+<link rel="import" href="../_fc-util/fc-field.html">
+
+<dom-module id="branches-atms">
+
+    <link rel="import" type="css" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css">
+
+    <template>
+
+        <style>
+            :host {
+                display: block;
+                --pan-background-color: var(--secundario);
+                --pan-color: var(--primario);
+                --pan-section-padding-bottom: 15px;
+                --pan-padding-y: 15px;
+                --pan-header-justify-content: space-between;
+                --pan-header-align-items: end;
+                --iron-icon-height: 36px;
+                --iron-icon-width: 36px;
+            }
+
+            :host(:hover) iron-icon {
+                cursor: pointer;
+            }
+
+            #mapa {
+                height: 300px;
+                border: 2px solid var(--neutro);
+            }
+        </style>
+
+        <fc-panel>
+            <h3 slot="titulo">Sucursales y Cajeros</h3>
+            <div slot="header">
+                <fc-field tipo="search" indicador="Filtrar" valor="{{busqueda::input}}" id="buscador">
+                </fc-field>
+                <iron-icon icon="icons:refresh" on-click="_init"></iron-icon>
+            </div>
+            <div id="mapa"></div>
+        </fc-panel>
+
+    </template>
+
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
+
+    <script>
+
+        class BranchesAtms extends Polymer.Element {
+
+            static get is() { return 'branches-atms'; }
+
+            static get properties() {
+                return {
+                    mapa: Object,
+                    APIData: { type: Array, value: [] },
+                    markers: Object,
+                    busqueda: {
+                        type: String, value: '', reflectToAttribute: true, notify: true
+                    },
+                    buscador: Object
+                }
+            }
+
+            /*  */
+            // ready() { super.ready(); this._init(); }
+            /*  */
+
+            async _init() {
+                await this.obtenerDatos();
+                if (this.mapa) this.mapa.remove();
+                this.inicializarMapa();
+                this.markers = new L.LayerGroup();
+                this.mostrarPines(this.APIData);
+                this.inicializarBuscador();
+            }
+
+            inicializarMapa() {
+                var mapElement = this.shadowRoot.querySelector("#mapa");
+                const map = L.map(mapElement).setView([23.120154, -101.206055], 5);
+                const enlaceMapa = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
+                L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; ' + enlaceMapa + ' Contributors',
+                    maxZoom: 18,
+                }).addTo(map);
+                this.mapa = map;
+                L.Icon.Default.prototype.options.iconUrl = 'https://unpkg.com/leaflet@1.3.4/dist/images/marker-icon.png';
+                L.Icon.Default.prototype.options.shadowUrl = '';
+            }
+
+            async obtenerDatos() {
+                var apiServer = JSON.parse(sessionStorage.getItem("APIServer"));
+                var accessToken = JSON.parse(sessionStorage.getItem("AccessToken"));
+                var headers = new Headers({
+                    'Authorization': accessToken
+                });
+                var urlLocations = `${apiServer}/Locations`;
+                const responseLocations = await fetch(urlLocations, { headers });
+                const responseJSON = await responseLocations.json();
+                responseJSON.forEach(({ street, longitude, latitude, type, zip }) => {
+                    var location = {};
+                    location.tipo = type;
+                    location.direccion = `${street}, ${zip}`;
+                    location.latitude = latitude;
+                    location.longitude = longitude;
+                    this.APIData.push(location);
+                })
+            }
+
+            inicializarBuscador() {
+                this.buscador = this.shadowRoot.querySelector("#buscador");
+                this.buscador.addEventListener('input', () => {
+                    this.filtrarDatos(this.buscador.valor);
+                });
+            }
+
+            mostrarPines(datosMostrar) {
+                this.markers.clearLayers();
+                datosMostrar.forEach((dato) => {
+                    const { latitude, longitude, direccion, tipo } = dato;
+                    const opcionesPopUp = L.popup().setContent(`
+                        <b>${tipo}</b>
+                        <br>
+                        <span>${direccion}</span>
+                        `);
+                    const marker = new L.marker([
+                        parseFloat(latitude),
+                        parseFloat(longitude),
+                    ]).bindPopup(opcionesPopUp);
+                    this.markers.addLayer(marker);
+                });
+                this.markers.addTo(this.mapa);
+            }
+
+            filtrarDatos(busqueda) {
+                const datosFiltrados = this.APIData.filter(dato => {
+                    let tipo = dato.tipo.toUpperCase();
+                    let direccion = dato.direccion.toUpperCase();
+                    let termino = busqueda.toUpperCase();
+                    return (
+                        tipo.indexOf(termino) !== -1 ||
+                        direccion.indexOf(termino) !== -1
+                    );
+                });
+                this.mostrarPines(datosFiltrados);
+            }
+
+        }
+
+        window.customElements.define(BranchesAtms.is, BranchesAtms);
+
+    </script>
+
+</dom-module>

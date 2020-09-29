@@ -1,0 +1,154 @@
+<link rel='import' href='../../bower_components/polymer/polymer-element.html'>
+<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+
+<link rel='import' href='./fc-panel.html'>
+
+<dom-module id='fc-notification'>
+
+    <template>
+
+        <style>
+            :host {
+                display: block;
+                position: fixed;
+                left: 50%;
+                transform: translate(-50%);
+                z-index: 100;
+                width: 320px;
+                top: 10px;
+                --pan-background-color: var(--fondo);
+                --pan-color: var(--fuente);
+                --pan-position: relative;
+                --pan-section-padding-bottom: 0;
+                --pan-content-display: flex;
+                --pan-content-justify-content: center;
+                --pan-content-align-items: center;
+                --pan-content-flex-wrap: nowrap;
+                --pan-padding-right: 32px;
+            }
+
+            .type-icon {
+                margin-right: 8px;
+            }
+
+            @keyframes animate {
+                from {
+                    top: -200px;
+                }
+
+                to {
+                    top: 10px;
+                }
+            }
+
+            :host {
+                animation-name: animate;
+                animation-duration: 1s;
+            }
+
+            @media (max-width: 320px) {
+                :host {
+                    width: 100%;
+                }
+            }
+
+            fc-panel {
+                -webkit-box-shadow: 0px 10px 30px 0px rgba(0, 0, 0, 0.75);
+                -moz-box-shadow: 0px 10px 30px 0px rgba(0, 0, 0, 0.75);
+                box-shadow: 0px 10px 30px 0px rgba(0, 0, 0, 0.75);
+            }
+
+            #close {
+                position: absolute;
+                top: 3px;
+                right: 3px;
+                color: var(--neutro);
+            }
+
+            :host(:hover) #close {
+                cursor: pointer;
+            }
+        </style>
+
+        <fc-panel>
+            <span class="type-icon">
+                <iron-icon icon="{{icon}}"></iron-icon>
+            </span>
+            <span>{{message}}</span>
+            <iron-icon icon="icons:highlight-off" on-click="close" id="close"></iron-icon>
+        </fc-panel>
+
+
+    </template>
+
+    <script>
+
+        class FcNotification extends Polymer.Element {
+
+            static get is() { return 'fc-notification'; }
+
+            static get properties() {
+                return {
+                    message: { type: String, value: 'Information' },
+                    type: { type: String, value: 'information' },
+                    timeout: { type: Number, value: 10 },
+                    icon: { type: String, value: 'icons:info-outline' },
+                    sessionExpiration: Number
+                }
+            }
+
+            setNotification({ message, type, timeout }) {
+                this.setMessage(message)
+                this.setType(type)
+                this.setTimeout(timeout);
+            }
+
+            setMessage(message) {
+                this.message = message || 'Information';
+            }
+
+            setType(type) {
+                this.type = type || 'information';
+                switch (this.type) {
+                    case 'error':
+                        this.icon = 'icons:error'
+                        break;
+                    case 'report':
+                        this.icon = 'icons:report'
+                        break;
+                    case 'report-problem':
+                        this.icon = 'icons:report-problem'
+                        break;
+                    case 'success':
+                        this.icon = 'icons:check-circle'
+                        break;
+                    case 'cancel':
+                        this.icon = 'icons:cancel'
+                        break;
+                    default:
+                        this.icon = 'icons:info'
+                }
+            }
+
+            setTimeout(timeout) {
+                if (timeout)
+                    this.sessionExpiration = setTimeout(() => {
+                        this.close();
+                    }, timeout * 1000);
+            }
+
+            close() {
+                clearTimeout(this.sessionExpiration);
+                this.dispatchEvent(new CustomEvent('switch',
+                    { detail: { remove: FcNotification.is } }
+                ));
+            }
+
+        }
+
+        window.customElements.define(FcNotification.is, FcNotification);
+
+    </script>
+
+</dom-module>

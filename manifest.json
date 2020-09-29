@@ -1,0 +1,7 @@
+{
+  "name": "fincore",
+  "short_name": "fincore",
+  "description": "Aplicacion bancaria ficticia.",
+  "start_url": "/",
+  "display": "standalone"
+}

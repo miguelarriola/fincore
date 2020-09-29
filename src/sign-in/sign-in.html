@@ -1,0 +1,217 @@
+<link rel='import' href='../../bower_components/polymer/polymer-element.html'>
+<link rel='import' href='../../src/_fc-util/fc-panel.html'>
+
+<dom-module id='sign-in'>
+
+    <template>
+
+        <style>
+            :host {
+                display: block;
+                --pan-margin-top: 2%;
+                --pan-background-color: var(--fondo);
+                --pan-background-color: var(--secundario);
+                --pan-color: var(--primario);
+                --pan-max-width: 340px;
+            }
+
+            a {
+                text-decoration: none;
+                color: var(--informacion);
+            }
+
+            a:hover {
+                text-decoration: underline;
+            }
+
+            input {
+                color: unset;
+                font-size: 16px;
+                padding: 8px;
+                height: 38px;
+                width: 100%;
+                border: 1px solid var(--neutro);
+                border-radius: 3px;
+                box-sizing: border-box;
+                -moz-box-sizing: border-box;
+                -webkit-box-sizing: border-box;
+            }
+
+            legend,
+            input {
+                margin-bottom: 6px;
+            }
+
+            input:last-child {
+                margin-bottom: 0;
+            }
+
+            button {
+                font-size: 16px;
+                font-weight: bold;
+                color: var(--secundario);
+                background-color: var(--primario);
+                padding: 12px;
+                border-radius: 4px;
+                border: none;
+                width: 100%;
+            }
+
+            button:hover {
+                cursor: pointer;
+            }
+
+            fc-panel {
+                padding-bottom: 1px;
+            }
+
+            .error {
+                color: var(--advertencia);
+                margin-bottom: 10px;
+                text-align: center;
+            }
+
+            .container {
+                display: flex;
+                justify-content: center;
+            }
+        </style>
+
+        <div class="container">
+
+            <fc-panel>
+
+                <h1 slot="titulo">Inicia Sesión</h1>
+
+                <div slot="menu">
+                    <a on-click="goToSignUp" href="#">
+                        <span>¿Aún no tienes una cuenta? Registrarse</span>
+                    </a>
+                </div>
+
+                <form action="#submit" id="form">
+
+                    <input type="email" value="{{email::input}}" placeholder="Email" required autofocus>
+
+                    <input type="password" value="{{password::input}}" placeholder="Password" required>
+
+                    <div class="error">
+                        <span hidden$="{{!errorMessage}}">{{errorMessage}}</span>
+                    </div>
+
+                    <button on-click="signIn" id="submit">Iniciar Sesión</button>
+
+                </form>
+
+            </fc-panel>
+
+        </div>
+
+    </template>
+
+    <script>
+
+        class SignIn extends Polymer.Element {
+
+            static get is() { return 'sign-in'; }
+
+            static get properties() {
+                return {
+                    errorMessage: { type: String, value: '' },
+                    email: { type: String, value: '' },
+                    password: { type: String, value: '' }
+                }
+            }
+
+            ready() {
+                super.ready();
+                this.$.form.addEventListener("submit", event => {
+                    event.preventDefault();
+                });
+                this.$.form.querySelector('[autofocus]').focus()
+            }
+
+            async signIn() {
+                if (!this.validateInputs()) return;
+                var credentials = this.build();
+                var body = JSON.stringify(credentials)
+                var headers = new Headers({
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                });
+                var apiServer = JSON.parse(sessionStorage.getItem("APIServer"));
+                var url = `${apiServer}/Signin`;
+                var response;
+                try {
+                    response = await fetch(url, { method: 'POST', body, headers });
+                } catch (error) {
+                    alert(`${error}`); return;
+                }
+                this.manageResponse(response);
+            }
+
+            validateInputs() {
+                this.email = this.email.trim();
+                this.password = this.password.trim();
+                if (this.email == '') return false;
+                if (this.password == '') return false;
+                if (!(/[\w]@[\w]/.test(this.email))) return false;
+                return true;
+            }
+
+            build() {
+                return {
+                    email: this.email,
+                    password: this.password
+                }
+            }
+
+            async manageResponse(response) {
+                if (response.ok) {
+                    this.errorMessage = ``;
+                    var responseJSON = await response.json();
+                    this.startSession(responseJSON);
+                } else if (400 <= response.status && response.status <= 499) {
+                    var responseJSON = await response.json();
+                    this.notify(responseJSON.message);
+                } else if (500 <= response.status && response.status <= 599) {
+                    this.notify('Error del servidor');
+                } else {
+                    this.notify(response.statusText);
+                }
+            }
+
+            notify(message) {
+                this.errorMessage = `${message}`;
+                this.shadowRoot.querySelector('.error').scrollIntoView({ behavior: "smooth" });
+            }
+
+            startSession(session) {
+                var accessToken = session.accessToken;
+                var expiresIn = session.expiresIn;
+                sessionStorage.setItem('AccessToken', JSON.stringify(accessToken));
+                sessionStorage.setItem('ExpiresIn', JSON.stringify(expiresIn));
+                window.addEventListener('unload', () => {
+                    sessionStorage.removeItem('AccessToken');
+                    sessionStorage.removeItem('ExpiresIn');
+                });
+                this.goTo('app-home');
+            }
+
+            goToSignUp() {
+                this.goTo('sign-up');
+            }
+
+            goTo(module) {
+                this.dispatchEvent(new CustomEvent('switch',
+                    { detail: { remove: SignIn.is, append: module } }
+                ));
+            }
+
+        }
+
+        window.customElements.define(SignIn.is, SignIn);
+
+    </script>
+
+</dom-module>

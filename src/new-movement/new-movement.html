@@ -1,0 +1,287 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/lib/elements/dom-repeat.html">
+<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+
+<link rel='import' href='../../src/_fc-util/fc-panel.html'>
+
+<dom-module id="new-movement">
+
+    <template>
+
+        <style>
+            :host {
+                display: block;
+                --pan-margin-top: 2%;
+                --pan-background-color: var(--fondo);
+                --pan-background-color: var(--secundario);
+                --pan-color: var(--primario);
+                --pan-header-justify-content: flex-end;
+                --pan-section-padding-bottom: 0;
+                --pan-padding-y: 15px;
+                --iron-icon-height: 36px;
+                --iron-icon-width: 36px;
+                --pan-header-padding-bottom: 15px;
+            }
+
+            :host(:hover) iron-icon {
+                cursor: pointer;
+            }
+
+            input,
+            select {
+                color: unset;
+                font-size: 16px;
+                padding: 8px;
+                height: 38px;
+                width: 100%;
+                border: 1px solid var(--neutro);
+                border-radius: 3px;
+                box-sizing: border-box;
+                -moz-box-sizing: border-box;
+                -webkit-box-sizing: border-box;
+                margin-bottom: 6px;
+            }
+
+            button {
+                font-size: 16px;
+                font-weight: bold;
+                color: var(--secundario);
+                background-color: var(--primario);
+                padding: 12px;
+                border-radius: 4px;
+                border: none;
+                width: 100%;
+            }
+
+            button:hover {
+                cursor: pointer;
+            }
+
+            fc-panel {
+                padding-bottom: 15px;
+            }
+
+            .error,
+            .success {
+                margin-bottom: 10px;
+                text-align: center;
+            }
+
+            .error {
+                color: var(--advertencia);
+            }
+
+            .success {
+                color: var(--informacion);
+            }
+        </style>
+
+        <fc-panel>
+
+            <h3 slot="titulo">Nuevo Movimiento</h3>
+
+            <div slot="header">
+                <iron-icon icon="icons:refresh" on-click="_init"></iron-icon>
+            </div>
+
+            <form action="#submit" id="form">
+
+                <select value="{{tipo::input}}" required autofocus>
+                    <option value="" selected>Tipo de Movimiento</option>
+                    <template is="dom-repeat" items="[[tiposMovimiento]]">
+                        <option value=[[item.tipo]]>[[item.nombre]]</option>
+                    </template>
+                </select>
+
+                <select value="{{origen::input}}" required>
+                    <option value="" selected>Cuenta Origen</option>
+                    <template is="dom-repeat" items="[[cuentasCliente]]">
+                        <option value=[[item.idcuenta]]>[[item.descripcion]] ([[item.formatedBalance]])
+                        </option>
+                    </template>
+                </select>
+
+                <input type="text" value="{{destino::input}}" placeholder="Cuenta Destino" required>
+
+                <input type="number" value="{{importe::input}}" placeholder="Importe" min="0.01" step="0.01" required>
+
+                <div class="error">
+                    <span hidden$="{{!errorMessage}}">{{errorMessage}}</span>
+                </div>
+
+                <div class="success">
+                    <span hidden$="{{!successMessage}}">{{successMessage}}</span>
+                </div>
+
+                <button on-click="sendMovement" id="submit">Aceptar</button>
+
+            </form>
+
+        </fc-panel>
+
+    </template>
+
+    <script>
+
+        class NewMovement extends Polymer.Element {
+
+            static get is() { return 'new-movement'; }
+
+            static get properties() {
+                return {
+                    infoMessage: String,
+                    errorMessage: String,
+                    successMessage: String,
+                    tiposMovimiento: { type: Array, value: [] },
+                    cuentasCliente: { type: Array, value: [] },
+                    tipo: { type: String, value: '' },
+                    origen: { type: String, value: '' },
+                    destino: { type: String, value: '' },
+                    importe: { type: String, value: '' }
+                };
+            }
+
+            /*  */
+            // ready() { super.ready(); this._init(); }
+            /*  */
+
+            _init() {
+                this.$.form.addEventListener("submit", event => {
+                    event.preventDefault();
+                });
+                this.$.form.querySelector('[autofocus]').focus()
+                this.fetchMovementsCatalog();
+                this.fetchAccounts();
+            }
+
+            async fetchMovementsCatalog() {
+                var apiServer = JSON.parse(sessionStorage.getItem("APIServer"));
+                var url = `${apiServer}/MovementsCatalog`;
+                var accessToken = JSON.parse(sessionStorage.getItem("AccessToken"));
+                var headers = new Headers({
+                    'Authorization': accessToken
+                });
+                var response;
+                try {
+                    response = await fetch(url, { headers });
+                } catch (error) {
+                    this.notify(error); return;
+                }
+                if (response.ok) {
+                    this.tiposMovimiento = await response.json();
+                } else this.manageResponse(response);
+            }
+
+            async fetchAccounts() {
+                var apiServer = JSON.parse(sessionStorage.getItem("APIServer"));
+                var url = `${apiServer}/Customers/Accounts`;
+                var accessToken = JSON.parse(sessionStorage.getItem("AccessToken"));
+                var headers = new Headers({
+                    'Authorization': accessToken
+                });
+                var response;
+                try {
+                    response = await fetch(url, { headers });
+                } catch (error) {
+                    this.notify(error); return;
+                }
+                if (response.ok) {
+                    this.cuentasCliente = await response.json();
+                    this.cuentasCliente.forEach(account => {
+                        var options = { style: "currency", currency: "USD" };
+                        var formatter = new Intl.NumberFormat("en-US", options);
+                        account.formatedBalance = formatter.format(account.saldo);
+                    })
+                } else this.manageResponse(response);
+            }
+
+            async sendMovement() {
+                if (!this.validateInputs()) return;
+                var movement = this.build();
+                var body = JSON.stringify(movement)
+                var apiServer = JSON.parse(sessionStorage.getItem("APIServer"));
+                var url = `${apiServer}/Customers/Movements`;
+                var accessToken = JSON.parse(sessionStorage.getItem("AccessToken"));
+                var headers = new Headers({
+                    'Authorization': accessToken,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                });
+                var response;
+                try {
+                    response = await fetch(url, { method: 'POST', body, headers })
+                } catch (error) {
+                    this.notify(error); return;
+                }
+                this.manageResponse(response);
+            }
+
+            validateInputs() {
+                this.tipo = this.tipo.trim();
+                this.origen = this.origen.trim();
+                this.destino = this.destino.trim();
+
+                if (this.tipo == '') return false;
+                if (this.origen == '') return false;
+                if (this.destino == '') return false;
+
+                if (this.origen == this.destino) {
+                    this.notify(`Cuenta destino debe ser diferente a cuenta origen`);
+                    return false;
+                }
+
+                this.importe = parseFloat(this.importe)
+                if (isNaN(this.importe)) return false;
+                if (this.importe < 0.01) return false;
+
+                this.errorMessage = ``;
+                return true;
+            }
+
+            build() {
+                var tipo = {};
+                this.tiposMovimiento.forEach(element => {
+                    if (element.tipo == this.tipo) tipo = element;
+                });
+                return {
+                    nombre: tipo.nombre,
+                    tipo: tipo.tipo,
+                    origen: this.origen,
+                    destino: this.destino,
+                    importe: this.importe,
+                };
+            }
+
+            async manageResponse(response) {
+                if (response.ok) {
+                    var responseJSON = await response.json();
+                    this.notify(responseJSON.message, 'success');
+                    this.fetchAccounts();
+                } else if (400 <= response.status && response.status <= 499) {
+                    var responseJSON = await response.json();
+                    this.notify(responseJSON.message);
+                } else if (500 <= response.status && response.status <= 599) {
+                    this.notify('Error del servidor');
+                } else {
+                    this.notify(response.statusText);
+                }
+
+            }
+
+            notify(message, type) {
+                if (type == 'success') {
+                    this.successMessage = `${message}`;
+                    this.errorMessage = ``;
+                    setTimeout(() => { this.successMessage = `` }, 5000);
+                } else this.errorMessage = `${message}`;
+                this.shadowRoot.querySelector(`.${type || 'error'}`).scrollIntoView({ behavior: "smooth" });
+            }
+
+        }
+
+        window.customElements.define(NewMovement.is, NewMovement);
+
+    </script>
+
+</dom-module>

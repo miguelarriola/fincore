@@ -1,0 +1,48 @@
+<link rel='import' href='../../bower_components/polymer/polymer-element.html'>
+
+<link rel="import" href="../app-header/app-header.html">
+<link rel="import" href="../menu-bar/menu-bar.html">
+
+<dom-module id='app-home'>
+
+    <template>
+
+        <style>
+            :host {
+                display: block;
+            }
+        </style>
+        <app-header on-sign-out="switch"></app-header>
+        <menu-bar></menu-bar>
+    </template>
+
+    <script>
+
+        class AppHome extends Polymer.Element {
+
+            static get is() { return 'app-home'; }
+
+            static get properties() {
+                return {}
+            }
+
+            switch(event) {
+                this.dispatchEvent(new CustomEvent('switch',
+                    {
+                        detail: {
+                            remove: 'app-home',
+                            append: 'sign-in',
+                            notification: event.detail.notification || null
+                        }
+
+                    }
+                ));
+            }
+
+        }
+
+        window.customElements.define(AppHome.is, AppHome);
+
+    </script>
+
+</dom-module>

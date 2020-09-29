@@ -1,0 +1,103 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+
+<link rel="import" href="../my-accounts/my-accounts.html">
+<link rel="import" href="../my-movements/my-movements.html">
+<link rel="import" href="../new-movement/new-movement.html">
+<link rel="import" href="../branches-atms/branches-atms.html">
+
+<link rel="import" href="../_fc-util/fc-panel.html">
+<link rel="import" href="../_fc-util/fc-toggle.html">
+
+<dom-module id="menu-bar">
+
+    <template>
+
+        <style>
+            :host {
+                display: block;
+                --pan-background-color: var(--secundario);
+                --pan-color: var(--primario);
+                --pan-menu-justify-content: space-evenly;
+                --pan-section-padding-bottom: 0;
+                --pan-padding-y: 8px;
+                --tgl-icon-fondo: var(--primario);
+                --tgl-fondo: var(--secundario);
+                --tgl-activo-icon-fondo: var(--secundario);
+                --tgl-activo-fondo: var(--primario);
+            }
+        </style>
+
+        <fc-panel on-click="cambiarPanel">
+            <div slot="menu" class="menu">
+                <fc-toggle activo="{{cuentasActive}}" tgl-icon="icons:account-balance-wallet"></fc-toggle>
+                <fc-toggle activo="{{movimientosActive}}" tgl-icon="icons:list"></fc-toggle>
+                <fc-toggle activo="{{nuevoActive}}" tgl-icon="add"></fc-toggle>
+                <fc-toggle activo="{{locacionesActive}}" tgl-icon="icons:room"></fc-toggle>
+            </div>
+        </fc-panel>
+
+        <div hidden$="{{!cuentasActive}}">
+            <my-accounts class="panel"></my-accounts>
+        </div>
+
+        <div hidden$="{{!movimientosActive}}">
+            <my-movements class="panel"></my-movements>
+        </div>
+
+        <div hidden$="{{!nuevoActive}}">
+            <new-movement class="panel"></new-movement>
+        </div>
+
+        <div hidden$="{{!locacionesActive}}">
+            <branches-atms class="panel"></branches-atms>
+        </div>
+
+    </template>
+
+    <script>
+
+        class MenuBar extends Polymer.Element {
+
+            static get is() { return 'menu-bar'; }
+
+            static get properties() {
+                return {
+                    buttons: {
+                        type: Array,
+                        notify: true,
+                        reflectToAttribute: true,
+                        value: []
+                    },
+                }
+            }
+
+            ready() {
+                super.ready()
+                var buttons = this.shadowRoot.querySelectorAll('fc-toggle');
+                var panels = this.shadowRoot.querySelectorAll('.panel');
+                for (let index = 0; index < buttons.length; index++) {
+                    function once() {
+                        panels[index]._init();
+                        buttons[index].removeEventListener("click", once);
+                    }
+                    buttons[index].addEventListener("click", once);
+                }
+                this.buttons = buttons;
+            }
+
+            cambiarPanel(event) {
+                var clickedButton = event.target;
+                if (clickedButton.activo) {
+                    this.buttons.forEach(button => button.activo = false)
+                    clickedButton.activo = true;
+                }
+            }
+
+        }
+
+        window.customElements.define(MenuBar.is, MenuBar);
+
+    </script>
+
+</dom-module>

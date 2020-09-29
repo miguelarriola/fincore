@@ -1,0 +1,61 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+
+<dom-module id="fc-field">
+
+    <template>
+
+        <style>
+            :host {
+                display: inline-block;
+            }
+
+            input,
+            .input {
+                height: 44px;
+                width: 220px;
+                padding: 11px;
+                font-size: 18px;
+                border: 2px solid var(--neutro);
+                box-sizing: border-box;
+                -moz-box-sizing: border-box;
+                -webkit-box-sizing: border-box;
+            }
+        </style>
+
+        <input type="{{tipo}}" placeholder="{{indicador}}" value="{{valor::input}}">
+        <slot name="input"></slot>
+
+    </template>
+
+    <script>
+
+        class FcField extends Polymer.Element {
+
+            static get is() { return 'fc-field'; }
+
+            static get properties() {
+                return {
+                    tipo: {
+                        type: String, value: ''
+                    },
+                    indicador: {
+                        type: String, value: ''
+                    },
+                    valor: {
+                        type: String, value: '', reflectToAttribute: true, notify: true
+                    },
+                }
+            }
+
+            ready() {
+                super.ready()
+                // this.addEventListener('input', event => console.log(this.valor));
+            }
+
+        }
+
+        window.customElements.define(FcField.is, FcField);
+
+    </script>
+
+</dom-module>

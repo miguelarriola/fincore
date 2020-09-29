@@ -1,0 +1,329 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+
+<link rel="import" href="../../src/_fc-util/fc-panel.html">
+
+<dom-module id="sign-up">
+
+    <template>
+
+        <style>
+            :host {
+                display: block;
+                --pan-margin-top: 2%;
+                --pan-background-color: var(--fondo);
+                --pan-background-color: var(--secundario);
+                --pan-color: var(--primario);
+            }
+
+            a {
+                text-decoration: none;
+                color: var(--informacion);
+            }
+
+            a:hover {
+                text-decoration: underline;
+            }
+
+            .group {
+                background-color: var(--secundario);
+                border-radius: 3px;
+                margin-bottom: 10px;
+                padding: 6px;
+                border: 2px solid var(--neutro);
+            }
+
+            input,
+            select {
+                color: unset;
+                font-size: 16px;
+                padding: 8px;
+                height: 38px;
+                width: 100%;
+                border: 1px solid var(--neutro);
+                border-radius: 3px;
+                box-sizing: border-box;
+                -moz-box-sizing: border-box;
+                -webkit-box-sizing: border-box;
+            }
+
+            legend,
+            input,
+            select {
+                margin-bottom: 6px;
+            }
+
+            input:last-child {
+                margin-bottom: 0;
+            }
+
+            button {
+                font-size: 16px;
+                font-weight: bold;
+                color: var(--secundario);
+                background-color: var(--primario);
+                padding: 12px;
+                border-radius: 4px;
+                border: none;
+                width: 100%;
+            }
+
+            button:hover,
+            #agree:hover {
+                cursor: pointer;
+            }
+
+            fc-panel {
+                padding-bottom: 1px;
+            }
+
+            .error {
+                color: var(--advertencia);
+                margin-bottom: 10px;
+                text-align: center;
+            }
+
+            .message span {
+                display: flex;
+            }
+
+            .message iron-icon {
+                margin-right: 6px;
+                min-width: 24px;
+                min-height: 24px;
+            }
+
+            .message p {
+                display: inline-block;
+                margin: 0;
+            }
+
+            .message .check-cont {
+                justify-content: center;
+                padding-top: 10px;
+            }
+
+            #agree {
+                padding: unset;
+                height: unset;
+                width: unset;
+                border: unset;
+                border-radius: unset;
+            }
+
+            .disabled {
+                background-color: #bbbbbb;
+            }
+        </style>
+
+
+        <fc-panel>
+
+            <h1 slot="titulo">Regístrate</h1>
+
+            <div slot="menu">
+                <a on-click="goToSignIn" href="#">
+                    <span>¿Ya tienes una cuenta? Iniciar sesión </span>
+                </a>
+            </div>
+
+            <form action="#submit" id="form">
+
+                <div class="personal group">
+                    <legend>Datos Personales</legend>
+                    <input type="text" value="{{nombre::input}}" placeholder="Nombre" required="" autofocus="">
+                    <input type="text" value="{{paterno::input}}" placeholder="Apellido" required="">
+                </div>
+
+                <div class="access group">
+                    <legend>Datos de Acceso</legend>
+                    <input type="email" value="{{email::input}}" placeholder="Email" required="">
+                    <input type="password" value="{{password::input}}" placeholder="Password" required="">
+                </div>
+
+                <div class="cuenta group">
+                    <legend>Cuenta Bancaria</legend>
+                    <input type="text" value="{{cuenta::input}}" placeholder="Número de Cuenta" required="">
+                    <select value="{{tipo::input}}" required="">
+                        <option value="" selected="">Tipo de Cuenta</option>
+                        <option value="debito">Débito</option>
+                        <option value="credito">Crédito</option>
+                    </select>
+                    <input type="text" value="{{descripcion::input}}" placeholder="Alias" required="">
+                    <input type="number" value="{{saldo::input}}" placeholder="Saldo" min="0.01" step="0.01" required="">
+                </div>
+
+                <div class="message group">
+                    <span>
+                        <iron-icon icon="icons:report"></iron-icon>
+                        <p>Este proyecto es de propósito académico por lo que sólo debes <strong>proporcionar datos
+                                ficticios.</strong></p>
+                    </span>
+                    <span class="check-cont">
+                        <input type="checkbox" id="agree" on-change="setLock">
+                        <label>Entendido</label>
+                    </span>
+                </div>
+
+                <div class="error">
+                    <span hidden$="{{!errorMessage}}">{{errorMessage}}</span>
+                </div>
+
+                <button on-click="signUp" id="submit">Registrarse</button>
+
+            </form>
+
+        </fc-panel>
+
+    </template>
+
+    <script>
+
+        class SignUp extends Polymer.Element {
+
+            static get is() { return 'sign-up'; }
+
+            static get properties() {
+                return {
+                    errorMessage: { type: String, value: '' },
+                    nombre: { type: String, value: '' },
+                    paterno: { type: String, value: '' },
+                    email: { type: String, value: '' },
+                    password: { type: String, value: '' },
+                    cuenta: { type: String, value: '' },
+                    tipo: { type: String, value: '' },
+                    descripcion: { type: String, value: '' },
+                    saldo: { type: String, value: '' },
+                    locked: { type: Boolean, value: true }
+                }
+            }
+
+            ready() {
+                super.ready();
+                this.$.form.addEventListener("submit", event => {
+                    event.preventDefault();
+                });
+                this.$.form.querySelector('[autofocus]').focus();
+                this.setLock();
+            }
+
+            setLock() {
+                if (this.$.agree.checked) {
+                    this.locked = false
+                    this.$.submit.disabled = false;
+                    this.$.submit.classList.remove('disabled');
+                } else {
+                    this.locked = true
+                    this.$.submit.disabled = true;
+                    this.$.submit.classList.add('disabled');
+                }
+            }
+
+            async signUp() {
+                if (this.locked) return;
+                if (!this.validateInputs()) return;
+                var customer = this.build();
+                var body = JSON.stringify(customer)
+                var headers = new Headers({
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                });
+                var apiServer = JSON.parse(sessionStorage.getItem("APIServer"));
+                var url = `${apiServer}/Signup`;
+                var response;
+                try {
+                    response = await fetch(url, { method: 'POST', body, headers })
+                } catch (error) {
+                    this.notify(error); return;
+                }
+                this.manageResponse(response);
+            }
+
+            validateInputs() {
+                this.nombre = this.nombre.trim();
+                this.paterno = this.paterno.trim();
+                this.email = this.email.trim();
+                this.password = this.password.trim();
+                this.cuenta = this.cuenta.trim();
+                this.tipo = this.tipo.trim();
+                this.descripcion = this.descripcion.trim();
+
+                if (this.nombre == '') return false;
+                if (this.paterno == '') return false;
+                if (this.email == '') return false;
+                if (this.password == '') return false;
+                if (this.cuenta == '') return false;
+                if (this.tipo == '') return false;
+                if (this.descripcion == '') return false;
+
+                if (!(/[\w]@[\w]/.test(this.email))) return false;
+
+                this.saldo = parseFloat(this.saldo)
+                if (isNaN(this.saldo)) return false;
+                if (this.saldo < 0.01) return false;
+
+                this.errorMessage = ``;
+                return true;
+            }
+
+            build() {
+                return {
+                    nombre: this.nombre,
+                    paterno: this.paterno,
+                    email: this.email,
+                    password: this.password,
+                    cuenta: this.cuenta,
+                    tipo: this.tipo,
+                    descripcion: this.descripcion,
+                    saldo: this.saldo
+                };
+            }
+
+            async manageResponse(response) {
+                if (response.ok) {
+                    var responseJSON = await response.json();
+                    this.errorMessage = ``;
+                    this.goToSignIn({
+                        detail: {
+                            notification: {
+                                message: responseJSON.message,
+                                type: 'success',
+                                timeout: 7
+                            }
+                        }
+                    });
+                } else if (400 <= response.status && response.status <= 499) {
+                    var responseJSON = await response.json();
+                    this.notify(responseJSON.message);
+                } else if (500 <= response.status && response.status <= 599) {
+                    this.notify('Error del servidor');
+                } else {
+                    this.notify(response.statusText);
+                }
+            }
+
+            notify(message) {
+                this.errorMessage = `${message}`;
+                this.shadowRoot.querySelector('.error').scrollIntoView({ behavior: "smooth" });
+            }
+
+            goToSignIn(event) {
+                this.dispatchEvent(new CustomEvent('switch',
+                    {
+                        detail: {
+                            remove: SignUp.is,
+                            append: 'sign-in',
+                            notification: event.detail.notification || null
+                        }
+                    }
+                ));
+            }
+
+        }
+
+        window.customElements.define(SignUp.is, SignUp);
+
+    </script>
+
+</dom-module>

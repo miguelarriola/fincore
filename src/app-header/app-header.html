@@ -1,0 +1,127 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+
+<link rel="import" href="../_fc-util/fc-button.html">
+<link rel="import" href="../_fc-util/fc-panel.html">
+
+<dom-module id="app-header">
+
+    <template>
+        <style>
+            :host {
+                display: block;
+                --pan-margin-top: 2%;
+                --btn-background-color: none;
+                --btn-border: 1px;
+                --btn-border-color: var(--fondo);
+                --btn-padding-top: 0;
+                --btn-padding-bottom: 0;
+                --btn-padding-right: 4px;
+                --btn-padding-left: 4px;
+                --btn-border-radius: 2px;
+            }
+
+            [slot="titulo"] {
+                font-family: 'Roboto Slab', serif;
+            }
+
+            fc-panel {
+                position: relative;
+            }
+
+            fc-button {
+                position: absolute;
+                right: 10px;
+                bottom: 10px;
+            }
+
+            h1,
+            h2 {
+                margin: 10px;
+            }
+        </style>
+
+        <fc-panel class="main">
+            <h1 slot="titulo">FinCore</h1>
+            <h2 slot='sub-titulo'>Bienvenid@ {{nombreCliente.nombre}} {{nombreCliente.paterno}}</h2>
+            <div slot="footer">
+                <fc-button class="sec-empt" on-click="signOut">Salir</fc-button>
+            </div>
+        </fc-panel>
+
+    </template>
+
+    <script>
+
+        class AppHeader extends FcPanel {
+
+            static get is() { return 'app-header'; }
+
+            static get properties() {
+                return {
+                    sessionExpiration: Number
+                }
+            }
+
+            ready() {
+                super.ready();
+                this.fetchCustomerName()
+                this.setSessionTime();
+            }
+
+            setSessionTime() {
+                var expiresIn = JSON.parse(sessionStorage.getItem("ExpiresIn"));
+                if (expiresIn != null || expiresIn != undefined) {
+                    var sessionTime = expiresIn * 1000;
+                    this.sessionExpiration = setTimeout(() => {
+                        this.signOut({
+                            detail: {
+                                notification: {
+                                    message: 'La sesión expiró',
+                                    timeout: 7
+                                }
+                            }
+                        });
+
+                    }, sessionTime);
+                }
+            }
+
+            fetchCustomerName() {
+                var apiServer = JSON.parse(sessionStorage.getItem("APIServer"));
+                var accessToken = JSON.parse(sessionStorage.getItem("AccessToken"));
+                var headers = new Headers({
+                    'Authorization': accessToken
+                });
+                var url = `${apiServer}/Customers/Name`;
+                fetch(url, { headers })
+                    .then(response => this.manageResponse(response));
+            }
+
+            async manageResponse(response) {
+                if (response.ok) {
+                    this.nombreCliente = await response.json();
+                } else {
+                    alert('Error de servidor interno.');
+                }
+            }
+
+            signOut(event) {
+                sessionStorage.removeItem('AccessToken');
+                sessionStorage.removeItem('ExpiresIn');
+                clearTimeout(this.sessionExpiration);
+                this.dispatchEvent(new CustomEvent('sign-out',
+                    {
+                        detail: {
+                            notification: event.detail.notification || null
+                        }
+                    }
+                ));
+            }
+
+        }
+
+        window.customElements.define(AppHeader.is, AppHeader);
+
+    </script>
+
+</dom-module>
